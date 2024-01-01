@@ -10,7 +10,7 @@
 #include "HAL/LEDS/LEDS.h"
 #include "interrupt_handlers.h"
 #include "My_Rtos/My_Rtos.h"
-#include "HAL/delay/delay_Timer/delayTimer.h"
+
 
 
 /*space to store thread internal stack*/
@@ -44,10 +44,7 @@ void main_blinky1(void)
 {
     while(1)
     {
-//        LEDS_ON(RED_LED);
-//        OsDelay(ticks_per_second);
-//        LEDS_OFF(RED_LED);
-//        OsDelay(ticks_per_second);
+
         uint32_t volatile i = 0;
         for(i = 0; i<2100;i++)
         {
@@ -96,11 +93,11 @@ void main(void)
 
     /*LEDs Initialization*/
     LEDS_INIT();
-    delayInintTimer1();
+
 
 
     /*operating System initialization (set PendSv priority and create idle stack)*/
-    //OSinit(stack_Idle,sizeof(stack_Idle));
+    OSinit(stack_Idle,sizeof(stack_Idle));
 
     /*creating threads stacks*/
     OSthreadStart(&blincky1, &main_blinky1, stack_Arr1, sizeof(stack_Arr1),4); //for blincky1
@@ -111,7 +108,7 @@ void main(void)
     SchedularStart();
     while(1)
     {
-        delayTimer1(2000);
+
     }
 
 }
