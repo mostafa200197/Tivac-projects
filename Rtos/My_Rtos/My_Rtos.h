@@ -16,108 +16,115 @@
 #define ticks_per_second 1000U
 #define log2(x) (32 - __clz(x))
 
+//*********************************************************************************
+// Typedefs
+//*********************************************************************************
 
-
-/* thread control block (TCB) */
+/* thread control block (TCB), hold information and data about each thread*/
 typedef struct{
-    void *SP;  //stack pointer of the Task
+    void *SP;  /*stack pointer of the Task*/
     uint32_t Timer; /*thread Time out delay counter*/
     uint8_t priority; /*thread priority number*/
 }OSthread;
 
-
+/*type to hold thread handler*/
 typedef void (*OSthreadHandler)();
-/*******************************************************************************************************************************************/
 
 
-/*idle thread*/
+//*********************************************************************************
+// Function prototypes
+//*********************************************************************************
+
+//******************************************************************************
+// Function: main_Idle
+// Description: Idle thread.
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void main_Idle(void);
-/*delay thread by given Ticks*/
+
+//******************************************************************************
+// Function: OsDelay
+// Description: Delay thread by given Ticks.
+// Parameters:
+//    -uint32_t ticks: number of delay tickss
+// Returns: None
+//******************************************************************************
 void OsDelay(uint32_t ticks);
-/*decrement timers of all Non-zero threads*/
+
+//******************************************************************************
+// Function: OsTick
+// Description: Timing management of tasks(decrement all not zero task timers).
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void OsTick(void);
 
-/*callback function for idle state*/
+//******************************************************************************
+// Function: OsOnIdle
+// Description: Idle state CallBack function.
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void OsOnIdle(void);
-/*
- * Function: OSthreadStart
- *
- * Description:
- *   a function to create the thread stack and initializes its stack pointer.
- *
- * Parameters:
- *   - param1: OSthread *me (pointer to TCB)
- *   - param2: OSthreadHandler threadHandler (pointer to function to thread handler)
- *   - param3: void* StackStor (pointer to where the stack memory is located)
- *   - param2: uint32_t StackSize (the stack size)
- * Returns:
- *   None
- */
+
+//******************************************************************************
+// Function: OSthreadStart
+// Description: Creates thread stack and initializes its stack pointer.
+// Parameters:
+//     - OSthread *me: Pointer to TCB
+//     - OSthreadHandler threadHandler: Pointer to thread handler function
+//     - void* StackStor: Pointer to stack memory location
+//     - uint32_t StackSize: Stack size
+// Returns: None
+//******************************************************************************
+
 void OSthreadStart(OSthread *me/* pointer to TCB*/,
                    OSthreadHandler threadHandler /* pointer to function to thread handler*/,
                    void* StackStor /*pointer to where the stack memory is located*/,
                    uint32_t StackSize /*the stack size*/,
                    uint8_t prio/*thread prio number*/);
-/*
- * Function: OSthreadStart
- *
- * Description:
- *   a function to create the thread stack and initializes its stack pointer.
- *
- * Parameters:
- *   - param1: OSthread *me (pointer to TCB)
- *   - param2: OSthreadHandler threadHandler (pointer to function to thread handler)
- *   - param3: void* StackStor (pointer to where the stack memory is located)
- *   - param2: uint32_t StackSize (the stack size)
- * Returns:
- *   None
- */
+
+//******************************************************************************
+// Function: OSinit
+// Description: Sets PendSv priority and sets up idle stack.
+// Parameters:
+//     - void* IdleStackStor: Pointer to idle stack memory location
+//     - uint8_t IdleStackSize: Idle stack size
+// Returns: None
+//******************************************************************************
+
 void OSinit(void* IdleStackStor,uint8_t IdleStackSize);
-/*
- * Function: OSthreadStart
- *
- * Description:
- *   a function to create the thread stack and initializes its stack pointer.
- *
- * Parameters:
- *   - param1: OSthread *me (pointer to TCB)
- *   - param2: OSthreadHandler threadHandler (pointer to function to thread handler)
- *   - param3: void* StackStor (pointer to where the stack memory is located)
- *   - param2: uint32_t StackSize (the stack size)
- * Returns:
- *   None
- */
+//******************************************************************************
+// Function: OSsched
+// Description: Manages threads and triggers context switch.
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void OSsched(void);
-/*
- * Function: OSthreadStart
- *
- * Description:
- *   .
- *
- * Parameters:
- *   - param1: OSthread *me (pointer to TCB)
- *   - param2: OSthreadHandler threadHandler (pointer to function to thread handler)
- *   - param3: void* StackStor (pointer to where the stack memory is located)
- *   - param2: uint32_t StackSize (the stack size)
- * Returns:
- *   None
- */
+
+//******************************************************************************
+// Function: SchedularStart
+// Description: Starts OS, configures interrupts, and starts first OSsched.
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void SchedularStart(void);
-/*
- * Function: OSthreadStart
- *
- * Description:
- *   a function to create the thread stack and initializes its stack pointer.
- *
- * Parameters:
- *   - param1: OSthread *me (pointer to TCB)
- *   - param2: OSthreadHandler threadHandler (pointer to function to thread handler)
- *   - param3: void* StackStor (pointer to where the stack memory is located)
- *   - param2: uint32_t StackSize (the stack size)
- * Returns:
- *   None
- */
+
+//******************************************************************************
+// Function: OsStartup
+// Description: Configures system interrupts for the first time, called by schedularStart.
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void OsStartup(void);
+
+//******************************************************************************
+// Function: PendSv_handler
+// Description: PendSv IRQ responsible for context switch between threads.
+// Parameters: None
+// Returns: None
+//******************************************************************************
 void PendSv_handler(void);
 
 #endif /* MY_RTOS_MY_RTOS_H_ */

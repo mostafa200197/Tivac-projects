@@ -36,7 +36,6 @@ void FFdelay(void)
     uint32_t i = 0;
     for(i = 0; i<2100;i++)
     {
-
     }
 }
 
@@ -44,14 +43,10 @@ void main_blinky1(void)
 {
     while(1)
     {
-
-        uint32_t volatile i = 0;
-        for(i = 0; i<2100;i++)
-        {
-            LEDS_ON(RED_LED);
-            LEDS_OFF(RED_LED);
-        }
-        OsDelay(2);
+        LEDS_ON(RED_LED);
+        FFdelay();
+        LEDS_OFF(RED_LED);
+        OsDelay(20);
     }
 
 }
@@ -59,16 +54,9 @@ void main_blinky2(void)
 {
     while(1){
         LEDS_ON(BLUE_LED);
-        OsDelay(ticks_per_second/2);
+        FFdelay();
         LEDS_OFF(BLUE_LED);
-        OsDelay(ticks_per_second/2);
-        uint32_t volatile i = 0;
-        for(i = 0; i<(3*2100);i++)
-        {
-            LEDS_ON(BLUE_LED);
-            LEDS_OFF(BLUE_LED);
-        }
-        OsDelay(10);
+        OsDelay(20);
     }
 }
 
@@ -76,9 +64,9 @@ void main_blinky3(void)
 {
     while(1){
         LEDS_ON(GREEN_LED);
-        OsDelay(ticks_per_second/4);
+        FFdelay();
         LEDS_OFF(GREEN_LED);
-        OsDelay(ticks_per_second/4);
+        OsDelay(20);
     }
 }
 
@@ -100,8 +88,8 @@ void main(void)
     OSinit(stack_Idle,sizeof(stack_Idle));
 
     /*creating threads stacks*/
-    OSthreadStart(&blincky1, &main_blinky1, stack_Arr1, sizeof(stack_Arr1),4); //for blincky1
-    OSthreadStart(&blincky2, &main_blinky2, stack_Arr2, sizeof(stack_Arr2),5); //for blincky2
+    OSthreadStart(&blincky1, &main_blinky1, stack_Arr1, sizeof(stack_Arr1),5); //for blincky1
+    OSthreadStart(&blincky2, &main_blinky2, stack_Arr2, sizeof(stack_Arr2),4); //for blincky2
     OSthreadStart(&blincky3, &main_blinky3, stack_Arr3, sizeof(stack_Arr3),3); //for blincky3
 
     /*starting the scheduler*/

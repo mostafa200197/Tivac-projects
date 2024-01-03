@@ -15,8 +15,7 @@ OSthread *volatile NextThread;
 
 
 OSthread *ThreadArr[33];
-uint8_t ThreadIndex = 0U;
-uint8_t ThreadNum = 0U;    /*to index and fill ThreadArr elements*/
+
 uint8_t MaxThreadNum = 32U; /*Max number of threads*/
 OSthread IdleThread;   /*TCB object for Idle thread*/
 uint32_t OsReadyMask; /*mask to hold the ready state of each thread*/
@@ -162,8 +161,6 @@ void OSthreadStart(OSthread *me/* pointer to TCB*/,
             /*make thread in ready state*/
             OsReadyMask |= (1<<(prio-1));
         }
-
-
 
     /*round up the stack bottom to 8 Byte boundary*/
     stackLimit = (uint32_t*)(((((uint32_t)StackStor -1U)/8)+1U)*8);
