@@ -39,9 +39,9 @@ void OSinit(void* IdleStackStor,uint8_t IdleStackSize)
 }
 void OsStartup(void){
     NVIC->SYSPRI3 &= ~(0xFF<<24); //set SYSTICK IRQ as highest priority
-    systick_init(System_clk()/ticks_per_second);
-    systick_interrupt_enable();
-    systick_start();
+    systick_init(System_clk()/ticks_per_second); //configure the Systick handler
+    systick_interrupt_enable(); //enable Systick interrupt
+    systick_start(); //start Systick
 }
 
 void OSsched(void)
@@ -53,8 +53,10 @@ void OSsched(void)
     }
     /*else go through the thread ready mask and check for ready threads*/
     else{
-        NextThread = ThreadArr[log2(OsReadyMask)];/*set the next running thread to the highest priority ready thread*/
-        assert(NextThread != (OSthread*)0); /*make sure next thread is not pointing to void*/
+        /*set the next running thread to the highest priority ready thread*/
+        NextThread = ThreadArr[log2(OsReadyMask)];
+        /*make sure next thread is not pointing to void*/
+        assert(NextThread != (OSthread*)0);
     }
 
     //NextThread = ThreadArr[ThreadIndex];

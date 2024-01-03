@@ -43,6 +43,7 @@ void main_blinky1(void)
 {
     while(1)
     {
+        LEDS_OFF(PIN0);
         LEDS_ON(RED_LED);
         FFdelay();
         LEDS_OFF(RED_LED);
@@ -53,6 +54,7 @@ void main_blinky1(void)
 void main_blinky2(void)
 {
     while(1){
+        LEDS_OFF(PIN0);
         LEDS_ON(BLUE_LED);
         FFdelay();
         LEDS_OFF(BLUE_LED);
@@ -63,6 +65,7 @@ void main_blinky2(void)
 void main_blinky3(void)
 {
     while(1){
+        LEDS_OFF(PIN0);
         LEDS_ON(GREEN_LED);
         FFdelay();
         LEDS_OFF(GREEN_LED);
@@ -73,7 +76,7 @@ void main_blinky3(void)
 
 void OsOnIdle(void)
 {
-    /*Put Idle code here*/
+    GPIO_WRITE(GPIOF, PIN0, high);
 }
 
 void main(void)
