@@ -13,12 +13,12 @@ void PWM_ModuleInit(PwmClockDivision Div){
     SYSCTL->RCGCPWM |= (1<<0);
 
     /*configure the PWM divisor*/
-    if(Div !=Div1)
+    if(Div != Div1)
     {
         /*make PWM divisor as input clock source*/
         SYSCTL->RCC |= (1<<20);
         /*set the division value*/
-        SYSCTL->RCC &= ~(0xFF<<16);
+        SYSCTL->RCC &= ~(0xF<<16);
         SYSCTL->RCC |= (Div<<17);
     }
     else{
@@ -67,11 +67,11 @@ void PWM_ComparatorConfig(PWM_RegDef_t *PWM,PwmGenerator gen,PwmOutId outputId,u
         {
             if (outputId == PwmA)
             {
-                PWM->_0_GENA = 0x0000008C;
+                PWM->_0_CMPA = compare;
             }
             else if (outputId == PwmB)
             {
-                PWM->_0_GENB = 0x0000080C;
+                PWM->_0_CMPB = compare;
             }
             break;
         }
@@ -80,11 +80,11 @@ void PWM_ComparatorConfig(PWM_RegDef_t *PWM,PwmGenerator gen,PwmOutId outputId,u
         {
             if (outputId == PwmA)
             {
-                PWM->_1_GENA = 0x0000008C;
+                PWM->_1_CMPA = compare;
             }
             else if (outputId == PwmB)
             {
-                PWM->_1_GENB = 0x0000080C;
+                PWM->_1_CMPB = compare;
             }
             break;
         }
@@ -93,11 +93,11 @@ void PWM_ComparatorConfig(PWM_RegDef_t *PWM,PwmGenerator gen,PwmOutId outputId,u
         {
             if (outputId == PwmA)
             {
-                PWM->_2_GENA = 0x0000008C;
+                PWM->_2_CMPA = compare;
             }
             else if (outputId == PwmB)
             {
-                PWM->_2_GENB = 0x0000080C;
+                PWM->_2_CMPB = compare;
             }
             break;
         }
@@ -106,11 +106,11 @@ void PWM_ComparatorConfig(PWM_RegDef_t *PWM,PwmGenerator gen,PwmOutId outputId,u
         {
             if (outputId == PwmA)
             {
-                PWM->_3_GENA = 0x0000008C;
+                PWM->_3_CMPA = compare;
             }
             else if (outputId == PwmB)
             {
-                PWM->_3_GENB = 0x0000080C;
+                PWM->_3_CMPB = compare;
             }
             break;
         }
