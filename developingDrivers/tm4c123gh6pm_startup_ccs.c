@@ -30,6 +30,9 @@
 
 
 void timer0_handler (void)__attribute__((weak,alias("IntDefaultHandler")));
+void PendSv_handler (void)__attribute__((weak,alias("IntDefaultHandler")));
+void systick_handler (void)__attribute__((weak,alias("IntDefaultHandler")));
+
 //*****************************************************************************
 //
 // Forward declaration of the default fault handlers.

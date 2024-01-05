@@ -50,6 +50,12 @@
 #define U1Tx_PC5 2
 #define U2Rx_PD6 1
 #define U2Tx_PD7 1
+#define M1PWM4_PF0 5
+#define M1PWM5_PF1 5
+#define M1PWM0_D0 5
+#define M1PWM1_D1 5
+#define M0PWM0_B6 4
+#define M0PWM1_B7 4
 
 void GPIO_INIT(gpio_reg_mape *GPIO,uint32_t PINS,uint32_t dir);
 void GPIO_DIGITAL_ANALOG(gpio_reg_mape *GPIO,uint32_t PINS,uint32_t OUT);
