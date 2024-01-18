@@ -53,37 +53,51 @@ uint32_t con(uint8_t volatile *arr,uint8_t num)
     }
     return result;
 }
-void BootMain(void)
-{
-    TerminalInit();
+
+int num_to_str(uint16_t num, uint8_t str[]) {
+  int i = 0;
+  while (num) {
+    int digit = num % 10;
+    str[i++] = digit + '0';
+    num /= 10;
+  }
+  str[i++] = '#';
+  str[i] = '\0';
+  return i;
+}
+uint16_t Get_hex_data(uint8_t* data){
     uint8_t size_Arr[4] = {0};
     uint16_t CRC=0,size=0;
-    uint8_t CRCarr[5];
-
+    uint8_t CRCarr[10];
     /*Receive size*/
     recieveDataFromTermianl(size_Arr, 4);
-
     /*turn size array to 1 variable*/
     size = con(size_Arr, 4);
-
     /*send acknowledge of received size*/
-    UART_SEND_bool(UART0, 'A');
-
+    sendTextToTerminal("OK #");
     /*Receive image hex*/
-    recieveDataFromTermianl(HexImage, size);
-
-
-
-    /*Resend the code image for verification*/
-    sendDataToTerminal(HexImage, size);
-
+    recieveDataFromTermianl(data, size);
+    sendTextToTerminal("code received#");
     /*compute CRC*/
-    CRC = crc16(HexImage, size);
-    /*convert to array*/
-    NumToArray(CRCarr, CRC);
+    CRC = crc16(data, size);
+    /*convert to string*/
+    //NumToArray(CRCarr, CRC);
+    int l = num_to_str(CRC, CRCarr);
     /*send the CRC array*/
-    sendDataToTerminal(CRCarr,5);
+    sendDataToTerminal(CRCarr, l);
+    return size;
 
+}
+void BootMain(void)
+{
+    uint16_t size = 0;
+    uint8_t flag = 0;
+    TerminalInit();
+    size = Get_hex_data(HexImage);
+    flash_Erase(flash_address, code_size);
+    flag = FlashProgram((uint32_t*)HexImage, flash_address,size);
+    assert(flag==0);
+    jump_to_image();
 
     while(1)
     {

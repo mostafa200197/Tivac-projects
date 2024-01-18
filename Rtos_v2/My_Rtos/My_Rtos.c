@@ -8,20 +8,15 @@
 #include "My_Rtos.h"
 #include "assert.h"
 
+
 #pragma LOCATION(CurrentThread, 0x2000034C)
 #pragma LOCATION(NextThread, 0x20000350)
 OSthread *volatile CurrentThread;
 OSthread *volatile NextThread;
 
 
-OSthread *ThreadArr[33];
-
-uint8_t MaxThreadNum = 32U; /*Max number of threads*/
-OSthread IdleThread;   /*TCB object for Idle thread*/
-uint32_t OsReadyMask; /*mask to hold the ready state of each thread*/
-uint32_t OsDelayedSet; /*mask holding all the delayed threads*/
-
-
+OSthread* head = NULL;
+uint8_t count = 0;
 void main_Idle(void)
 {
     while(1){
@@ -35,7 +30,7 @@ void OSinit(void* IdleStackStor,uint8_t IdleStackSize)
     /*set PENDSV interrupt as the lowest priority*/
     NVIC->SYSPRI3 |= (0xFF<<16);
     /*create Idle task stack*/
-    OSthreadStart(&IdleThread, &main_Idle,IdleStackStor,IdleStackSize,0);
+    OSthreadStart(&main_Idle,IdleStackStor,IdleStackSize,0);
 }
 void OsStartup(void){
     NVIC->SYSPRI3 &= ~(0xFF<<24); //set SYSTICK IRQ as highest priority
@@ -47,19 +42,20 @@ void OsStartup(void){
 void OSsched(void)
 {
     /*checks if all threads are blocked*/
-    if(OsReadyMask == 0)
+    OSthread *working = find_highest_priority_ready(&head);
+
+    if(working == NULL)
     {
-        NextThread = ThreadArr[0]; /*point the next thread to Idle thread*/
+        NextThread = find_idle(&head); /*point the next thread to Idle thread*/
     }
     /*else go through the thread ready mask and check for ready threads*/
     else{
         /*set the next running thread to the highest priority ready thread*/
-        NextThread = ThreadArr[log2(OsReadyMask)];
+        NextThread = working;
         /*make sure next thread is not pointing to void*/
         assert(NextThread != (OSthread*)0);
     }
 
-    //NextThread = ThreadArr[ThreadIndex];
     if(NextThread != CurrentThread)
     {
         NVIC->INTCTRL |= (1<<28); //trigger PendSv interrupt
@@ -83,51 +79,66 @@ void OsDelay(uint32_t ticks)
 {
     interrupts_disable;
     /*make sure delay is not called from Idle thread*/
-    assert(CurrentThread != ThreadArr[0]);
+    assert(CurrentThread->priority != 0);
     /*set the timer in TCB to the required delay ticks*/
     CurrentThread->Timer = ticks;
     /*set thread state as blocked in the thread ready mask*/
-    OsReadyMask &= ~(1<< (CurrentThread->priority - 1U));
-    /*add the thread to the delayed thread mask*/
-    OsDelayedSet |= (1<<(CurrentThread->priority - 1U));
-    /*call OsSched() to take control away from the blocked thread*/
+    CurrentThread->ready = 0;
+
     OSsched();
     interrupts_enable;
 }
-void OsTick(void)
-{
-    /*a temporary variable used to make sure the while loop iterated across all the delayed tasks*/
-    uint32_t workingset = OsDelayedSet;
-    /*while there is still non processed delayed thread*/
-    while(workingset != 0U)
-    {
-        /*temporary variable to hold the highest priority delayed non processed thread*/
-        OSthread* temp = ThreadArr[log2(workingset)];
-        /*decrement the timer*/
-        (temp->Timer)--;
-        /*if it reached zero (ready)*/
-        if((temp->Timer) == 0U)
-        {
-            /*make it ready in the ready mask*/
-            OsReadyMask |= (1<<(temp->priority - 1U));
-            /*and remove it from the delayed set*/
-            OsDelayedSet &= ~(1<<(temp->priority - 1U));
-        }
-        /*remove the processed thread from the working threads mask*/
-        workingset &= ~(1<<(temp->priority - 1U));
-    }
+
+void semaphore_wait(BinarySemaphore* semaphore) {
+   interrupts_disable;  // Disable interrupts to ensure atomicity
+
+    semaphore->locked = 1;  // Lock the semaphore
+    CurrentThread->ready = 0;  // Mark the task as blocked
+    semaphore->waiting_task = CurrentThread;  // Store the waiting task in the semaphore
+    interrupts_enable;  // Enable interrupts before blocking
+    OSsched();   /*call OsSched() to take control away from the blocked thread*/
 
 }
 
-void OSthreadStart(OSthread *me/* pointer to TCB*/,
+void semaphore_release(BinarySemaphore* semaphore) {
+
+  interrupts_disable;  // Disable interrupts to ensure atomicity
+
+  semaphore->locked = 0;  // Unlock the semaphore
+
+  // Check if there is a task waiting on the semaphore
+  if (semaphore->waiting_task != NULL) {
+    OSthread* unblocked_task = semaphore->waiting_task;
+    unblocked_task->ready = 1;  // Mark the task as ready
+    semaphore->waiting_task = NULL;  // Clear the waiting task
+  }
+  interrupts_enable;  // Enable interrupts after atomic operation
+  OSsched(); // Trigger task scheduling
+}
+
+void OsTick(void)
+{
+
+    OSthread* working = head;
+    while(working != NULL){
+        if((working->priority != 0)&&(working->ready == 0)){
+            --(working->Timer);
+            if(working->Timer == 0){
+                working->ready = 1;
+            }
+        }
+        working = working->next;
+    }
+}
+uint8_t volatile list_n = 0;
+void OSthreadStart(
                    OSthreadHandler threadHandler /* pointer to function to thread handler*/,
                    void* StackStor /*pointer to where the stack memory is located*/,
                    uint32_t StackSize /*the stack size*/,
                    uint8_t prio/*thread prio number*/)
 {
 
-    /*check if priority is in valid limits and is not already used*/
-    assert((prio < MaxThreadNum) && (ThreadArr[prio] == (OSthread*)0));
+
 
     /* stack pointer pointing to last memory location, round down to 8 Byte boundary.*/
     uint32_t *SP = (uint32_t*)((((uint32_t)StackStor + StackSize)/8)*8);
@@ -150,20 +161,17 @@ void OSthreadStart(OSthread *me/* pointer to TCB*/,
     *(--SP) = 0x00000006U; //R6 initial value
     *(--SP) = 0x00000005U; //R5 initial value
     *(--SP) = 0x00000004U; //R4 initial value
-    /*save the top of the stack to the OSThread attribute (TCB)*/
-    me->SP =SP;
-    /*save thread priority in its TCB*/
-    me->priority = prio;
 
-    /*save thread in the thread array according to its priority number*/
-        ThreadArr[prio] = me;
-    /*if priority is not zero (idle) set it to ready state in read mask*/
-        if(prio > 0U)
-        {
-            /*make thread in ready state*/
-            OsReadyMask |= (1<<(prio-1));
-        }
-
+    if(prio == 0U)
+    {
+        /*make thread in not ready state*/
+        CreateTCB(&head, SP, 0, count, 0, prio);
+    }
+    else{
+        CreateTCB(&head, SP, 0, count, 1, prio);
+    }
+    count++;
+   list_n = list_len(head);
     /*round up the stack bottom to 8 Byte boundary*/
     stackLimit = (uint32_t*)(((((uint32_t)StackStor -1U)/8)+1U)*8);
     //fill rest of stack frame to garbage value for illustration
@@ -209,7 +217,6 @@ __asm volatile (
     /*loading the global CurrentThread address into R2*/
     "  MOVW          r2,#0x034C       \n"
     "  MOVT          r2,#0x2000       \n"
-    /*Current thread TCB = next thread TCB*/
     "  STR           r1,[r2,#0x00]     \n"
     /* pop registers r4-r11 */
     "  POP           {r4-r11}          \n"
